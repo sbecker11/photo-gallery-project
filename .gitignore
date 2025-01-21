@@ -1,0 +1,6 @@
+/.cache
+/.temp
+/claude-session-2025-01-20T20:50:00.txt
+/node_modules
+/package-lock.json
+/test.mjs
