@@ -1,4 +1,3 @@
-// path: src/galleryHtml.js
 // generated on: 2023-10-10T10:00:00Z
 export function generateGalleryHtml(galleryImageSize) {
     return `
@@ -119,7 +118,7 @@ export function generateGalleryHtml(galleryImageSize) {
                 <p><strong>Cmd-S</strong>: Save changes to the original image file</p>
                 <p><strong>Cmd-V</strong>: Save changes to a copy file with the same name but with "-copy" appended to file root</p>
             </div>
-            <script src="key-events.js"></script>
+            <script src="key-events.js?v=1.0"></script>
             <script>
                 // Load the generated gallery content
                 fetch('gallery-content.html')
