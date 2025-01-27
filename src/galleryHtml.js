@@ -1,5 +1,31 @@
-// generated on: 2023-10-10T10:00:00Z
-export function generateGalleryHtml(galleryImageSize) {
+// path: /src/galleryHtml.js
+// timestamp: 2025-01-23T05:04:00Z
+
+import { appConstants } from '../server.mjs';
+
+// // pulls server return the thumbnailTileDivsHtml string used
+// // to set the innerHTML of the gallery-content div
+// async function fetchGalleryContent() {
+//     try {
+//         // server.mjs handles the 'thumbnails/gallery-content.html' request:
+//         // 1. imageObjects = common.findAllImageObjects();
+//         // 2. galleryContent = generateThumbnailTileDivsHtml(imageObjects);
+//         // 3. returns galleryContent
+//         const response = await fetch('/thumbnails/gallery-content.html');
+//         if (!response.ok) {
+//             throw new Error(`HTTP error! status: ${response.status}`);
+//         }
+//         const galleryContent = await response.text();
+//         return galleryContent;;
+//     } catch (error) {
+//         console.error('Error fetching galleryContent:', error);
+//         return null;
+//     }
+// }
+
+// this is the exported entry point
+// returns the entire gallery html string
+export function generateGalleryHtml() {
     return `
         <!DOCTYPE html>
         <html>
@@ -15,14 +41,14 @@ export function generateGalleryHtml(galleryImageSize) {
                 }
                 .gallery {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(${galleryImageSize}px, 1fr));
+                    grid-template-columns: repeat(auto-fill, minmax(${appConstants.galleryImageSize}px, 1fr));
                     gap: 20px;
                     padding: 20px;
                 }
                 .image-tile {
                     position: relative;
-                    width: ${galleryImageSize}px;
-                    height: ${galleryImageSize}px;
+                    width: ${appConstants.galleryImageSize}px;
+                    height: ${appConstants.galleryImageSize}px;
                     overflow: hidden;
                     transition: transform 0.3s ease;
                     cursor: pointer;
@@ -98,7 +124,8 @@ export function generateGalleryHtml(galleryImageSize) {
         </head>
         <body>
             <div class="gallery" id="gallery-content">
-                <!-- Gallery content will be dynamically loaded here -->
+                <!-- html = await fetch /thumbnails/gallery-content.html return generateTileDivsHtml() -->
+                <!-- document.getById('gallery-content').innerHTML = html  -->
             </div>
             <div id="fullscreenViewer" class="fullscreen-viewer">
                 <img src="" alt="Full size image">
@@ -115,13 +142,14 @@ export function generateGalleryHtml(galleryImageSize) {
                 <p><strong>R</strong>: Rotate the image counter-clockwise</p>
                 <p><strong>h</strong>: Apply histogram equalization</p>
                 <p><strong>g</strong>: Convert to greyscale</p>
-                <p><strong>Cmd-S</strong>: Save changes to the original image file</p>
-                <p><strong>Cmd-V</strong>: Save changes to a copy file with the same name but with "-copy" appended to file root</p>
+                <p><strong id="save-original-key">Cmd-S</strong>: Save changes to the original image file</p>
+                <p><strong id="save-copy-key">Cmd-V</strong>: Save changes to a copy file with the same name but with "-copy" appended to file root</p>
             </div>
             <script src="key-events.js?v=1.0"></script>
             <script>
+
                 // Load the generated gallery content
-                fetch('gallery-content.html')
+                fetch('/thumbnails/gallery-content.html')
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById('gallery-content').innerHTML = html;
@@ -134,6 +162,18 @@ export function generateGalleryHtml(galleryImageSize) {
                             });
                         });
                     });
+
+                // Update key combinations based on the user's operating system
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                const saveOriginalKey = document.getElementById('save-original-key');
+                const saveCopyKey = document.getElementById('save-copy-key');
+                if (isMac) {
+                    saveOriginalKey.textContent = 'Cmd-S';
+                    saveCopyKey.textContent = 'Cmd-V';
+                } else {
+                    saveOriginalKey.textContent = 'Ctrl-S';
+                    saveCopyKey.textContent = 'Ctrl-V';
+                }
             </script>
         </body>
         </html>

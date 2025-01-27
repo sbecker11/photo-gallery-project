@@ -2,11 +2,15 @@ import express from 'express';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs-extra';
+import { appConstants } from '../server.mjs';
 
 const router = express.Router();
-const tempDir = path.join(process.cwd(), '.temp');
+
+// Middleware to parse JSON bodies
+router.use(express.json());
 
 // Ensure temp directory exists
+const tempDir = path.join(process.cwd(), '.temp');
 fs.ensureDirSync(tempDir);
 
 router.post('/api/image-operation', async (req, res) => {
@@ -36,7 +40,7 @@ router.post('/api/image-operation', async (req, res) => {
         res.json({ tempPath: `file://${tempPath}` });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error43: error.message });
     }
 });
 
@@ -66,7 +70,7 @@ router.post('/api/save-image', async (req, res) => {
         res.json({ newPath: `file://${newPath}` });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error73: error.message });
     }
 });
 
@@ -82,7 +86,7 @@ router.post('/api/move-to-deleted', async (req, res) => {
         res.json({ success: true });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error89: error.message });
     }
 });
 
