@@ -1,14 +1,15 @@
-// path: /public/key-events.js
+// path: /public/globalEventLoaders.js
 // timestamp: 2025-01-23T02:45:00Z
 
-document.addEventListener('DOMContentLoaded', () => {
-    const imageTiles = document.querySelectorAll('.image-tile');
-    imageTiles.forEach(tile => {
-        tile.addEventListener('click', () => {
-            const img = tile.querySelector('img');
-            showFullscreen(img.dataset.full);
-        });
-    });
+import { getElementVisibility } from './intersect.js'; // Ensure the correct file type
+
+export function refreshGlobalEventListeners() {
+    console.log('refreshGlobalEventListeners');
+
+    if (document.showFullscreen) {
+        console.log("refreshGlobalEventListeners() ignored; global functions already loaded");
+        return;
+    }
 
     const viewer = document.getElementById('fullscreenViewer');
     viewer.addEventListener('click', hideFullscreen);
@@ -42,13 +43,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Apply platform remappings
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const saveOriginalKey = document.getElementById('save-original-key');
+    const saveCopyKey = document.getElementById('save-copy-key');
+    if (isMac) {
+        saveOriginalKey.textContent = 'Cmd-S';
+        saveCopyKey.textContent = 'Cmd-V';
+    } else {
+        saveOriginalKey.textContent = 'Ctrl-S';
+        saveCopyKey.textContent = 'Ctrl-V';
+    }
+
     function showFullscreen(imagePath) {
         const detailView = document.getElementById('fullscreenViewer');
         const detailImage = detailView.querySelector('img');
         detailImage.src = imagePath;
         detailView.style.display = 'flex';
         document.body.style.overflow = 'hidden'; // Prevent scrolling
+        const viewer = document.getElementById('fullscreenViewer');
+        detailImage.addEventListener('click', document.hideFullscreen);
     }
+
+    document.showFullscreen = showFullscreen;
 
     function hideFullscreen() {
         const detailView = document.getElementById('fullscreenViewer');
@@ -56,29 +73,51 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = ''; // Restore scrolling
     }
 
+    document.hideFullscreen = hideFullscreen;
+
     function showUsageMessage() {
-        // console.log('Show usage message functionality not implemented yet.');
-        // Implement the logic to show usage message
+        console.log('Show usage message.');
+        const usageMessage = document.getElementById("usageMessage");
+        usageMessage.style.display = 'block';
     }
+
+    document.showUsageMessage = showUsageMessage;
 
     function hideUsageMessage() {
-        // console.log('Hide usage message functionality not implemented yet.');
-        // Implement the logic to hide usage message
+        console.log('Hide usage message.');
+        const usageMessage = document.getElementById("usageMessage");
+        usageMessage.style.display = 'none';
     }
 
+    document.hideUsageMessage = hideUsageMessage;
+
+
+    function isElementVisible(element) {
+        const rect = getElementVisibility(element);
+        return rect ? true : false;
+    }
+
+    // Change the objectFit property for the image currently shown in the fullScreenViewer
     function fullSizeImage(mode) {
-        const img = document.getElementById('fullscreenViewer').querySelector('img');
-        if (mode === 'fit') {
-            img.style.objectFit = 'contain';
-        } else if (mode === 'fill') {
-            img.style.objectFit = 'cover';
+        const viewer = document.getElementById('fullscreenViewer');
+        if (isElementVisible(viewer)) {
+            const img = viewer.querySelector('img');
+            if (mode === 'fit') {
+                img.style.objectFit = 'contain';
+            } else if (mode === 'fill') {
+                img.style.objectFit = 'cover';
+            }
         }
     }
 
+    document.fullSizeImage = fullSizeImage;
+
     function deleteImage() {
-        // console.log('Delete image functionality not implemented yet.');
+        console.log('Delete image functionality not implemented yet.');
         // Implement the logic to move the file to a ".deleted" folder
     }
+
+    document.deleteImage = deleteImage;
 
     function rotateImage(direction) {
         const img = document.getElementById('fullscreenViewer').querySelector('img');
@@ -92,15 +131,21 @@ document.addEventListener('DOMContentLoaded', () => {
         img.dataset.rotation = currentRotation;
     }
 
+    document.rotateImage = rotateImage;
+
     function applyHistogramEqualization() {
-        // console.log('Apply histogram equalization functionality not implemented yet.');
+        console.log('Apply histogram equalization functionality not implemented yet.');
         // Implement the logic to apply histogram equalization
     }
 
+    document.applyHistogramEqualization = applyHistogramEqualization;
+
     function convertToGreyscale() {
-        // console.log('Convert to greyscale functionality not implemented yet.');
+        console.log('Convert to greyscale functionality not implemented yet.');
         // Implement the logic to convert to greyscale
     }
+
+    document.convertToGreyscale = convertToGreyscale;
 
     function saveChanges(type) {
         const img = document.getElementById('fullscreenViewer').querySelector('img');
@@ -108,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rotation = img.dataset.rotation ? parseInt(img.dataset.rotation) : 0;
 
         // Implement the logic to save changes to the original or copy file
-        // console.log(`Saving changes to ${type} file: ${imagePath} with rotation: ${rotation}`);
+        console.log(`Saving changes to ${type} file: ${imagePath} with rotation: ${rotation}`);
 
         // Example of sending a request to the server to save changes
         fetch('/save-image', {
@@ -134,16 +179,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function refreshGallery() {
-        // console.log('key-events:refreshGallery fetching /thumbnails/gallery-content.html')
-        fetch('/thumbnails/gallery-content.html')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('gallery-content').innerHTML = html;
-                addThumbnailClickHandlers();
-            })
-            .catch(error => {
-                console.error('Error refreshing gallery:', error);
-            });
-    }
-});
+    document.saveChanges = saveChanges;
+}

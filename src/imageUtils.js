@@ -1,5 +1,6 @@
 import sharp from 'sharp';
 import { extname, basename } from 'path';
+import fs from 'fs-extra';
 
 export const supportedImageExtensionsList = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'];
 
@@ -12,15 +13,30 @@ export async function getImageFileMetadata(imagePath) {
     }
 
     try {
-        const metadata = await sharp(imagePath).metadata();
-        return {
-            fileName: fileName,
-            extension: ext,
-            width: metadata.width,
-            height: metadata.height
-        };
+        // Check if the file exists and is accessible
+        await fs.access(imagePath, fs.constants.R_OK);
     } catch (error) {
-        throw new Error(`Error processing image:${imagePath} ${error.message}`);
+        throw new Error(`Error accessing file: ${fileName} ${error.message}`);
+    }
+
+    // maxRetries on error
+    const maxRetries = 2;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const metadata = await sharp(imagePath).metadata();
+            return {
+                fileName: fileName,
+                extension: ext,
+                width: metadata.width,
+                height: metadata.height
+            };
+        } catch (error) {
+            if (attempt === maxRetries) {
+                // replace full path with just filename
+                let errorMessage = error.message.replace("Input file contains", `Input file:${fileName} contains`);
+                throw new Error(`${errorMessage} after ${ maxRetries} attempts`);
+            }
+        }
     }
 }
 

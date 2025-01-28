@@ -2,8 +2,7 @@ import express from 'express';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs-extra';
-import { appConstants } from '../server.mjs';
-
+import { getImageFileMetadata } from './imageUtils.js';
 const router = express.Router();
 
 // Middleware to parse JSON bodies
@@ -12,6 +11,17 @@ router.use(express.json());
 // Ensure temp directory exists
 const tempDir = path.join(process.cwd(), '.temp');
 fs.ensureDirSync(tempDir);
+
+// Example API endpoint to get image metadata
+router.get('/api/image-metadata', async (req, res) => {
+    const imagePath = req.query.path;
+    try {
+        const metadata = await getImageFileMetadata(imagePath);
+        res.json(metadata);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 router.post('/api/image-operation', async (req, res) => {
     try {

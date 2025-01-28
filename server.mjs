@@ -1,5 +1,5 @@
 // path: /server.mjs
-// timestamp: 2025-01-23T06:10:00Z
+// timestamp: 2025-01-27T19:10:00Z
 
 import dotenv from 'dotenv';
 import express from 'express';
@@ -8,10 +8,9 @@ import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 import apiRouter from './src/api.js';
 import { refreshGalleryContentFile } from './src/common.js';
-import { generateGalleryHtml } from './src/galleryHtml.js';
-import { mainRouter } from './src/routes.js';
 import { supportedImageExtensionsList } from './src/imageUtils.js';
 import { validateString, validateInteger, validatePath, getStringList, validateStringList } from './src/validator.js';
+import { mainRouter } from './src/routes.js'; // Ensure mainRouter is imported
 
 // Get the path of this server.mjs file
 // and to it's parent folder, which is the projectRoot
@@ -25,7 +24,6 @@ dotenv.config({ path: path.join(projectRoot, 'app.properties') });
 const app = express();
 const port = 3000;
 
-
 const publicRoot = validatePath(path.join(projectRoot, 'public'), 'publicRoot');
 const scanRoot = validatePath(process.env.scanRoot, 'scanRoot');
 const cacheRoot = validatePath(process.env.cacheRoot, 'cacheRoot');
@@ -33,6 +31,7 @@ const thumbnailPercentage = validateInteger(process.env.thumbnailPercentage, 'th
 const cacheThumbnailRoot = path.join(cacheRoot,`thumbnails-${thumbnailPercentage}`);
 const noScanFolderNames = getStringList(process.env.noScanFolderNames,'noScanFolderNames');
 const cachedThumbnailGalleryContentPath = validatePath(path.join(cacheThumbnailRoot,'gallery.html'), 'cachedThumbnailGalleryContentPath');
+const appServerLogPath = validatePath(process.env.appServerLogPath, 'appServerLogPath');
 
 // this is globally accessible in the server code
 // using import { appConstants } from '../server.mjs';
@@ -46,8 +45,8 @@ export const appConstants = Object.freeze({
     thumbnailPercentage: thumbnailPercentage,
     galleryWidth: validateInteger(process.env.galleryWidth, 'galleryWidth'),
     galleryHeight: validateInteger(process.env.galleryHeight, 'galleryHeight'),
-    galleryTileSize: validateInteger(process.env.galleryTileSize, 'galleryTileSize'),
-    cachedThumbnailGalleryContentPath: cachedThumbnailGalleryContentPath
+    cachedThumbnailGalleryContentPath: cachedThumbnailGalleryContentPath,
+    appServerLogPath: appServerLogPath
 });
 
 // Middleware to parse JSON bodies
@@ -56,6 +55,9 @@ app.use(express.json());
 // Serve static files using 'public'
 app.use('/', express.static(publicRoot));
 
+// Serve static files for requests that lack a leading slash
+app.use(express.static(publicRoot));
+
 // Serve static files from the 'scanRoot' directory at the '/images' URL path
 app.use('/images', express.static(scanRoot));
 
@@ -63,7 +65,7 @@ app.use('/images', express.static(scanRoot));
 app.use('/thumbnails', express.static(cacheThumbnailRoot));
 
 // Use the main router for application routes
-app.use('/', mainRouter);
+app.use(mainRouter);
 
 // Use the API router for API routes
 app.use('/api', apiRouter);
@@ -110,9 +112,6 @@ app.get('/thumbnails/gallery-content.html', async (req, res) => {
 // Function to initialize the gallery and start the server
 function startServer() {
     try {
-        // generate the gallery once
-        generateGalleryHtml(appConstants);
-
         // start listening
         app.listen(port, () => {
             console.log(`Server running at http://localhost:${port}`);

@@ -5,6 +5,7 @@ import path from 'path';
 import { basename } from 'path';
 import { getImageFileMetadata } from './imageUtils.js';
 
+
 async function findAllImageObjects(dir, imageObjects = []) {
     const files = await fs.readdir(dir); // read the content of the directory
     for (const file of files) {
@@ -15,28 +16,35 @@ async function findAllImageObjects(dir, imageObjects = []) {
         const fileStat = await fs.stat(filePath);
 
         if (fileStat.isDirectory()) {
-            // Skip specified folders
-            if (appConstants.noScanFolderNames.includes(filePath)) continue;
+
+            const folderName = path.basename(filePath);
+
+            // isNoScanFolder if this folderName matches any of the noScanFolderNames
+            const isNoScanFolder = appConstants.noScanFolderNames.includes(folderName);
+            if (isNoScanFolder) {
+                console.log("Skipping folderPath:", filePath );
+                continue;
+            }
 
             // Recursive call to process the contents of the directory
             await findAllImageObjects(filePath, imageObjects);
 
         } else if (fileStat.isFile() && appConstants.supportedImageExtensionsList.includes(path.extname(filePath).toLowerCase())) {
 
-            // Get imageMetadata
-            let imageMetadata = null;
+            // Get imageFileMetadata
+            let imageFileMetadata = null;
             try {
-                imageMetadata = await getImageFileMetadata(filePath);
+                imageFileMetadata = await getImageFileMetadata(filePath);
             } catch (error) {
-                console.error("imageMetadata error file:"+file+" error:" + error.message);
+                console.error(error.message);
                 continue;
             }
-            if (!imageMetadata) {
-                console.error("imageMetadata null for file:"+file);
+            if (!imageFileMetadata) {
+                console.error("imageFileMetadata null for file:"+file);
                 continue;
             }
 
-            // Add the file and its imageMetadata to the list of imageObjects
+            // Add the file and its imageFileMetadata to the list of imageObjects
             const imageName = file;
             const imageStat = fileStat;
             const imagePath = filePath;
@@ -52,8 +60,8 @@ async function findAllImageObjects(dir, imageObjects = []) {
                 imageUrl: imageUrl,             // url of the imageFile
                 cachedThumbnailPath: cachedThumbnailPath,   // absolute path of the cached scaled thumbnail
                 cachedThumbnailUrl: cachedThumbnailUrl,     // url of the cached scaled thumbnail
-                imageWidth: imageMetadata.width,     // pixel width of the imageFile
-                imageHeight: imageMetadata.height    // pixel height of the imageFile
+                imageWidth: imageFileMetadata.width,     // pixel width of the imageFile
+                imageHeight: imageFileMetadata.height    // pixel height of the imageFile
             });
         }
     }
@@ -123,12 +131,27 @@ async function createCachedThumbnail(imageObject) {
     }
 }
 
-async function getCachedThumbnail(imageObject) {
-    return imageObject.cachedThumbnailPath;
-}
+
+// This server-side function, comomon.js::generateThumbnailTileDivHtml, is used to create
+// an image-tile div with image tag that includes data attribute "fullSizeImageUrl":
+//
+// <img src="${imageObject.cachedThumbnailUrl}" data-full-size-image-url="${imageObject.imageUrl}"/>
+//
+// ThumbnailTileDivs are used by common.js::refreshCachedThumbnails to refresh the server-side
+// thumbnails-root/gallery-content.html file for all images with a valid thumbnail image.
+//
+// On the client side, gallery.js::refreshGalleryContent fetches the gallery-content file from
+// the server and loads it into the gallery-content div. Then for the img of each image-tile div
+// it retrieves the fullSizeImageUrl from the img.data.fullSizeImageUrl attribute and
+// uses it to call document.showFullscreen(fullSizeImageUrl)
 
 function generateThumbnailTileDivHtml(imageObject) {
-    return `<div class="image-tile"><a href="${imageObject.cachedThumbnailUrl}" target="_blank"><img src="${imageObject.imageUrl}" alt="${imageObject.imageName}" /></a></div>`;
+    // console.log('client::img.src img.dataset.fullSizeImageUrl');
+    const thumbnaiilUrl = imageObject.cachedThumbnailUrl;
+    const fullsizeImageUrl = imageObject.imageUrl;
+    const imgHtml = `<img src="${thumbnaiilUrl}" data-full-size-image-url="${fullsizeImageUrl}"/>`;
+    // console.log(imgHtml);
+    return `<div class="image-tile">${imgHtml}</div>`;
 }
 
 // returns list of all tileDivs as a single Html string
@@ -148,3 +171,4 @@ export async function refreshGalleryContentFile() {
     const thumbnailDivsHtml = await generateThumbnailTileDivsHtml(imageObjects);
     await fs.writeFile(appConstants.cachedThumbnailGalleryContentPath, thumbnailDivsHtml);
 }
+

@@ -1,17 +1,13 @@
 import express from 'express';
-import { generateGalleryHtml } from './galleryHtml.js';
-import { appConstants } from '../server.mjs';
 
 export const mainRouter = express.Router();
 
-// Serve the gallery.html file dynamically
-mainRouter.get('/', async (req, res) => {
-    try {
-        const galleryHtml = await generateGalleryHtml(appConstants);
-        res.send(galleryHtml);
-    } catch (error) {
-        console.error("Error in generateGalleryHtml:", error);
-        res.status(500).send('Internal Server Error14');
-    }
+// Define your routes here
+mainRouter.get('/gallery', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// You can add more routes as needed
+mainRouter.get('/api/some-endpoint', (req, res) => {
+    res.json({ message: 'This is an API endpoint' });
+});
